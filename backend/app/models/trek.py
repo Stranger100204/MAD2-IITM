@@ -86,9 +86,6 @@ class Trek(db.Model):
         lazy=True
     )
 
-    def __repr__(self):
-        return f"<Trek {self.name}>"
-
     def to_dict(self):
         return {
             "id": self.id,
@@ -104,3 +101,6 @@ class Trek(db.Model):
             "start_date": self.start_date.isoformat() if self.start_date else None,
             "end_date": self.end_date.isoformat() if self.end_date else None,
         }
+
+    def __repr__(self):
+        return f"<Trek {self.name}>"

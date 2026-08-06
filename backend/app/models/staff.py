@@ -54,4 +54,6 @@ class Staff(db.Model):
             "experience_years": self.experience_years,
             "specialization": self.specialization,
             "emergency_contact": self.emergency_contact,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "user": self.user.to_dict() if self.user else None
         }

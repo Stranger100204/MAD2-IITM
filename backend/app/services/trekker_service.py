@@ -20,7 +20,7 @@ class TrekkerService:
             Booking.trek
         ).filter(
             Booking.user_id == user_id,
-            Booking.trek.has(status=TrekStatus.ONGOING.value)
+            Booking.trek.has(status=TrekStatus.OPEN.value)
         ).count()
 
         completed = Booking.query.join(

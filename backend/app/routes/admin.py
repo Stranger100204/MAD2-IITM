@@ -3,6 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.admin_service import AdminService
 from app.utils.decorators import admin_required
+from app.utils.validators import validate_trek_data
+from app.extensions import cache
 
 admin_bp = Blueprint(
     "admin",
@@ -14,6 +16,7 @@ admin_bp = Blueprint(
 @admin_bp.route("/dashboard", methods=["GET"])
 @jwt_required()
 @admin_required
+@cache.cached(timeout=300)
 def dashboard():
 
     return jsonify(
@@ -27,7 +30,21 @@ def dashboard():
 def create_trek():
 
     try:
-        trek = AdminService.create_trek(request.get_json())
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "error": "Request body must be valid JSON."
+            }), 400
+
+        error = validate_trek_data(data)
+
+        if error:
+            return jsonify({
+                "error": error
+            }), 400
+
+        trek = AdminService.create_trek(data)
 
         return jsonify({
             "message": "Trek created successfully.",
@@ -79,9 +96,16 @@ def update_trek(trek_id):
 
     try:
 
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "error": "Request body must be valid JSON."
+            }), 400
+
         trek = AdminService.update_trek(
             trek_id,
-            request.get_json()
+            data
         )
 
         return jsonify({
@@ -121,9 +145,21 @@ def create_staff():
 
     try:
 
-        user = AdminService.create_staff(
-            request.get_json()
-        )
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "error": "Request body must be valid JSON."
+            }), 400
+
+        error = validate_staff_data(data)
+
+        if error:
+            return jsonify({
+                "error": error
+            }), 400
+
+        user = AdminService.create_staff(data)
 
         return jsonify({
             "message": "Staff created successfully.",
@@ -176,9 +212,16 @@ def update_staff(staff_id):
 
     try:
 
+        data = request.get_json()
+
+        if not data:
+            return jsonify({
+                "error": "Request body must be valid JSON."
+            }), 400
+
         staff = AdminService.update_staff(
             staff_id,
-            request.get_json()
+            data
         )
 
         return jsonify({
@@ -219,6 +262,11 @@ def delete_staff(staff_id):
 def assign_staff(trek_id):
 
     data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "error": "Request body must be valid JSON."
+        }), 400
 
     try:
 
@@ -278,6 +326,11 @@ def update_user_status(user_id):
 
     data = request.get_json()
 
+    if not data:
+        return jsonify({
+            "error": "Request body must be valid JSON."
+        }), 400
+
     try:
 
         current_admin_id = int(get_jwt_identity())
@@ -299,7 +352,6 @@ def update_user_status(user_id):
             "error": str(e)
         }), 400
 
-
 @admin_bp.route("/search", methods=["GET"])
 @jwt_required()
 @admin_required
@@ -316,3 +368,34 @@ def search():
 
     return jsonify(result), 200
 
+@admin_bp.route("/bookings", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_all_bookings():
+
+    bookings = AdminService.get_all_bookings()
+
+    return jsonify({
+        "bookings": [
+            {
+                **booking.to_dict(),
+                "user": booking.user.to_dict(),
+                "trek": booking.trek.to_dict()
+            }
+            for booking in bookings
+        ]
+    }), 200
+
+@admin_bp.route("/history", methods=["GET"])
+@jwt_required()
+@admin_required
+def get_trek_history():
+
+    history = AdminService.get_trek_history()
+
+    return jsonify({
+        "history": [
+            trek.to_dict()
+            for trek in history
+        ]
+    }), 200

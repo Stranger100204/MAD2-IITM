@@ -12,6 +12,7 @@ from app.constants.status import UserStatus
 from app.extensions import db
 from app.models import User
 from app.utils.security import hash_password, verify_password
+from app.utils.validators import validate_registration_data
 
 auth_bp = Blueprint(
     "auth",
@@ -35,6 +36,13 @@ def register():
     if not data:
         return jsonify({
             "error": "Request body must be valid JSON."
+        }), 400
+
+    error = validate_registration_data(data)
+
+    if error:
+        return jsonify({
+            "error": error
         }), 400
 
     name = data.get("name")

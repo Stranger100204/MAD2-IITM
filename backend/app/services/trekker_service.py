@@ -5,6 +5,7 @@ from app.constants.status import (
     TrekStatus
 )
 from app.models import User
+from app.utils.security import hash_password
 
 class TrekkerService:
 
@@ -53,12 +54,35 @@ class TrekkerService:
         ]
 
     @staticmethod
-    def search_treks(query):
+    def search_treks(filters):
 
-        treks = Trek.query.filter(
+        query = Trek.query.filter(
             Trek.available_slots > 0,
-            Trek.status != TrekStatus.COMPLETED.value,
-            Trek.name.ilike(f"%{query}%")
+            Trek.status == TrekStatus.OPEN.value
+        )
+
+        if filters.get("q"):
+            query = query.filter(
+                Trek.name.ilike(f"%{filters['q']}%")
+            )
+
+        if filters.get("location"):
+            query = query.filter(
+                Trek.location.ilike(f"%{filters['location']}%")
+            )
+
+        if filters.get("difficulty"):
+            query = query.filter(
+                Trek.difficulty == filters["difficulty"]
+            )
+
+        if filters.get("duration"):
+            query = query.filter(
+                Trek.duration_days == int(filters["duration"])
+            )
+
+        treks = query.order_by(
+            Trek.start_date.asc()
         ).all()
 
         return [
@@ -142,5 +166,31 @@ class TrekkerService:
     def get_profile(user_id):
 
         user = User.query.get(user_id)
+
+        return user
+
+    @staticmethod
+    def update_profile(user_id, data):
+
+        user = User.query.get(user_id)
+
+        if not user:
+            raise ValueError("User not found.")
+
+        if data.get("name"):
+            user.name = data["name"]
+
+        if data.get("phone"):
+            user.phone = data["phone"]
+
+        if data.get("email"):
+            user.email = data["email"]
+
+        if data.get("password"):
+            user.password_hash = hash_password(
+                data["password"]
+            )
+
+        db.session.commit()
 
         return user

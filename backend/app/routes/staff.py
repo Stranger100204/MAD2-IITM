@@ -7,6 +7,7 @@ from flask_jwt_extended import (
 
 from app.services.staff_service import StaffService
 from app.utils.decorators import staff_required
+from app.extensions import cache
 
 staff_bp = Blueprint(
     "staff",
@@ -17,6 +18,7 @@ staff_bp = Blueprint(
 @staff_bp.route("/dashboard", methods=["GET"])
 @jwt_required()
 @staff_required
+@cache.cached(timeout=300)
 def dashboard():
 
     user_id = int(get_jwt_identity())

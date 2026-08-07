@@ -13,6 +13,7 @@ from app.constants.roles import UserRole
 from app.constants.status import TrekStatus, UserStatus
 
 from app.utils.security import hash_password
+from app.extensions import cache
 
 class AdminService:
     
@@ -69,6 +70,7 @@ class AdminService:
 
         db.session.add(trek)
         db.session.commit()
+        cache.clear()
 
         return trek
 
@@ -141,6 +143,7 @@ class AdminService:
             trek.total_slots = total_slots
 
         db.session.commit()
+        cache.clear()
 
         return trek
 
@@ -160,6 +163,7 @@ class AdminService:
         db.session.delete(trek)
 
         db.session.commit()
+        cache.clear()
 
     @staticmethod
     def create_staff(data):
@@ -379,3 +383,23 @@ class AdminService:
                 for trek in treks
             ]
         }
+
+    @staticmethod
+    def get_all_bookings():
+
+        bookings = Booking.query.order_by(
+            Booking.booking_date.desc()
+        ).all()
+
+        return bookings
+
+    @staticmethod
+    def get_trek_history():
+
+        treks = Trek.query.filter_by(
+            status=TrekStatus.COMPLETED.value
+        ).order_by(
+            Trek.end_date.desc()
+        ).all()
+
+        return treks

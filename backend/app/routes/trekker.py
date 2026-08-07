@@ -8,7 +8,8 @@ from flask_jwt_extended import (
 
 from app.utils.decorators import trekker_required
 from app.services.trekker_service import TrekkerService
-
+from app.extensions import cache
+from app.tasks.exports import export_booking_history
 
 trekker_bp = Blueprint(
     "trekker",
@@ -20,6 +21,7 @@ trekker_bp = Blueprint(
 @trekker_bp.route("/dashboard", methods=["GET"])
 @jwt_required()
 @trekker_required
+@cache.cached(timeout=300)
 def dashboard():
 
     user_id = int(get_jwt_identity())
@@ -31,23 +33,13 @@ def dashboard():
 @trekker_bp.route("/treks", methods=["GET"])
 @jwt_required()
 @trekker_required
+@cache.cached(timeout=300)
 def get_available_treks():
 
     treks = TrekkerService.get_available_treks()
 
     return jsonify({
         "treks": treks
-    }), 200
-
-@trekker_bp.route("/treks/search", methods=["GET"])
-@jwt_required()
-@trekker_required
-def search_treks():
-
-    query = request.args.get("q", "").strip()
-
-    return jsonify({
-        "treks": TrekkerService.search_treks(query)
     }), 200
 
 @trekker_bp.route("/treks/<int:trek_id>/book", methods=["POST"])
@@ -126,3 +118,67 @@ def profile():
     return jsonify({
         "user": user.to_dict()
     }), 200
+
+@trekker_bp.route("/profile", methods=["PUT"])
+@jwt_required()
+@trekker_required
+def update_profile():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "error": "Request body must be valid JSON."
+        }), 400
+
+    user_id = int(get_jwt_identity())
+
+    try:
+
+        user = TrekkerService.update_profile(
+            user_id,
+            data
+        )
+
+        return jsonify({
+            "message": "Profile updated successfully.",
+            "user": user.to_dict()
+        }), 200
+
+    except ValueError as e:
+
+        return jsonify({
+            "error": str(e)
+        }), 400
+
+@trekker_bp.route("/treks/search", methods=["GET"])
+@jwt_required()
+@trekker_required
+def search_treks():
+
+    filters = {
+        "q": request.args.get("q"),
+        "location": request.args.get("location"),
+        "difficulty": request.args.get("difficulty"),
+        "duration": request.args.get("duration")
+    }
+
+    treks = TrekkerService.search_treks(filters)
+
+    return jsonify({
+        "treks": treks
+    }), 200
+
+@trekker_bp.route("/bookings/export", methods=["POST"])
+@jwt_required()
+@trekker_required
+def export_bookings():
+
+    user_id = int(get_jwt_identity())
+
+    task = export_booking_history.delay(user_id)
+
+    return jsonify({
+        "message": "Export started.",
+        "task_id": task.id
+    }), 202

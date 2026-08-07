@@ -1,10 +1,18 @@
 from app.extensions import celery
 
+from celery.schedules import crontab
+
 
 def init_celery(app):
 
     celery.conf.broker_url = "redis://localhost:6379/0"
     celery.conf.result_backend = "redis://localhost:6379/0"
+    celery.conf.beat_schedule = {
+        "daily-reminder": {
+            "task": "daily_reminder",
+            "schedule": crontab(hour=8, minute=0),
+        },
+    }
 
     class ContextTask(celery.Task):
 

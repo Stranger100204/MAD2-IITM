@@ -10,6 +10,7 @@ from app.utils.decorators import trekker_required
 from app.services.trekker_service import TrekkerService
 from app.extensions import cache
 from app.tasks.exports import export_booking_history
+from app.tasks.reminders import daily_reminder
 
 trekker_bp = Blueprint(
     "trekker",
@@ -180,5 +181,17 @@ def export_bookings():
 
     return jsonify({
         "message": "Export started.",
+        "task_id": task.id
+    }), 202
+
+@trekker_bp.route("/test-reminder", methods=["POST"])
+@jwt_required()
+@trekker_required
+def test_reminder():
+
+    task = daily_reminder.delay()
+
+    return jsonify({
+        "message": "Reminder task started.",
         "task_id": task.id
     }), 202

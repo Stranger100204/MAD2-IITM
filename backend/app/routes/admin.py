@@ -6,6 +6,8 @@ from app.utils.decorators import admin_required
 from app.utils.validators import validate_trek_data
 from app.extensions import cache
 
+from app.tasks.reports import monthly_report
+
 admin_bp = Blueprint(
     "admin",
     __name__,
@@ -399,3 +401,15 @@ def get_trek_history():
             for trek in history
         ]
     }), 200
+
+@admin_bp.route("/test-report", methods=["POST"])
+@jwt_required()
+@admin_required
+def test_report():
+
+    task = monthly_report.delay()
+
+    return jsonify({
+        "message": "Monthly report started.",
+        "task_id": task.id
+    }), 202

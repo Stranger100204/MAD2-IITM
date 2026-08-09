@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.admin_service import AdminService
 from app.utils.decorators import admin_required
-from app.utils.validators import validate_trek_data
+from app.utils.validators import validate_trek_data, validate_staff_data
 from app.extensions import cache
 
 from app.tasks.reports import monthly_report
@@ -402,6 +402,7 @@ def get_trek_history():
         ]
     }), 200
 
+'''
 @admin_bp.route("/test-report", methods=["POST"])
 @jwt_required()
 @admin_required
@@ -413,3 +414,4 @@ def test_report():
         "message": "Monthly report started.",
         "task_id": task.id
     }), 202
+'''

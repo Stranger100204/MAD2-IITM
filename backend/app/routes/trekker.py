@@ -184,6 +184,7 @@ def export_bookings():
         "task_id": task.id
     }), 202
 
+'''
 @trekker_bp.route("/test-reminder", methods=["POST"])
 @jwt_required()
 @trekker_required
@@ -195,3 +196,4 @@ def test_reminder():
         "message": "Reminder task started.",
         "task_id": task.id
     }), 202
+'''

@@ -1,5 +1,6 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, send_file
 from flask import request
+import os
 
 from flask_jwt_extended import (
     jwt_required,
@@ -177,12 +178,36 @@ def export_bookings():
 
     user_id = int(get_jwt_identity())
 
-    task = export_booking_history.delay(user_id)
+    # Run synchronously so the file is immediately available to download
+    from app.utils.csv_export import export_booking_history as export_csv
+    filename = export_csv(user_id)
 
     return jsonify({
-        "message": "Export started.",
-        "task_id": task.id
-    }), 202
+        "message": "Export complete. Use the download button to get your CSV.",
+        "filename": filename,
+        "ready": True
+    }), 200
+
+@trekker_bp.route("/bookings/download", methods=["GET"])
+@jwt_required()
+@trekker_required
+def download_bookings():
+
+    user_id = int(get_jwt_identity())
+
+    filepath = os.path.join("exports", f"bookings_{user_id}.csv")
+
+    if not os.path.exists(filepath):
+        return jsonify({
+            "error": "No export file found. Please export first."
+        }), 404
+
+    return send_file(
+        os.path.abspath(filepath),
+        mimetype="text/csv",
+        as_attachment=True,
+        download_name=f"my_bookings_{user_id}.csv"
+    )
 
 '''
 @trekker_bp.route("/test-reminder", methods=["POST"])

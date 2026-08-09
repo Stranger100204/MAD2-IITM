@@ -1,5 +1,8 @@
 from app.extensions import celery
 from app.services.report_service import ReportService
+from app.models import User
+from app.constants.roles import UserRole
+from app.utils.email import send_email
 
 import logging
 
@@ -14,5 +17,16 @@ def monthly_report():
     logger.info("Monthly Report Generated")
     logger.info("=" * 50)
     logger.info(f"Monthly report saved to {filename}")
+
+    admin = User.query.filter_by(role=UserRole.ADMIN.value).first()
+
+    if admin:
+        send_email(
+            admin.email,
+            "Monthly Trekking Report",
+            f"Hello Admin,\n\nYour monthly trekking activity report has been generated successfully.\n\nYou can access it on your server at: {filename}\nOr download it directly from the Admin Dashboard -> Reports tab.\n\nBest,\nSystem"
+        )
+    else:
+        logger.warning("No Admin user found to email the report to.")
 
     return filename

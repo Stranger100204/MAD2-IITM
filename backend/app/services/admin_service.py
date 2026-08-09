@@ -23,7 +23,7 @@ class AdminService:
 
         return {
             "statistics": {
-                "total_users": User.query.count(),
+                "total_users": User.query.filter_by(role="TREKKER").count(),
                 "total_staff": User.query.filter_by(role="STAFF").count(),
                 "total_treks": Trek.query.count(),
                 "total_bookings": Booking.query.count()
@@ -58,7 +58,7 @@ class AdminService:
             total_slots=total_slots,
             available_slots=total_slots,
             assigned_staff_id=data.get("assigned_staff_id"),
-            status=TrekStatus.PENDING.value,
+            status=data.get("status", TrekStatus.PENDING.value),
             start_date=datetime.strptime(
                 data.get("start_date"),
                 "%Y-%m-%d"

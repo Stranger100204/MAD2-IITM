@@ -43,7 +43,7 @@ class TrekkerService:
 
         treks = Trek.query.filter(
             Trek.available_slots > 0,
-            Trek.status != TrekStatus.COMPLETED.value
+            Trek.status == TrekStatus.OPEN.value
         ).order_by(
             Trek.start_date.asc()
         ).all()
@@ -100,6 +100,9 @@ class TrekkerService:
 
         if trek.status == TrekStatus.COMPLETED.value:
             raise ValueError("This trek has already been completed.")
+
+        if trek.status != TrekStatus.OPEN.value:
+            raise ValueError("This trek is not open for booking.")
 
         if trek.available_slots <= 0:
             raise ValueError("No slots available.")

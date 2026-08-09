@@ -1,5 +1,6 @@
 from app.models import Trek, Booking, User
 from app.constants.roles import UserRole
+from datetime import datetime
 
 import os
 
@@ -16,11 +17,14 @@ class ReportService:
             role=UserRole.TREKKER.value
         ).count()
 
+        generated_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         html = f"""
         <html>
         <body>
 
         <h2>Monthly Trekking Report</h2>
+        <p><small>Generated on: {generated_time}</small></p>
 
         <table border="1" cellpadding="8">
 

@@ -25,3 +25,11 @@ instance/
 # Node (Frontend)
 frontend/node_modules/
 frontend/dist/
+
+# Generated files
+backend/exports/
+backend/reports/
+
+# Postman local/workspace files
+.postman/
+postman/

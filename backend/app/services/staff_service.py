@@ -1,6 +1,6 @@
-from app.extensions import db
+from app.extensions import db, cache
 from app.models import Trek, Booking
-from app.constants.status import TrekStatus
+from app.constants.status import TrekStatus, BookingStatus
 
 class StaffService:
 
@@ -13,7 +13,7 @@ class StaffService:
 
         active_treks = Trek.query.filter_by(
             assigned_staff_id=user_id,
-            status=TrekStatus.ONGOING.value
+            status=TrekStatus.OPEN.value
         ).count()
 
         completed_treks = Trek.query.filter_by(
@@ -101,6 +101,7 @@ class StaffService:
         trek.status = status
 
         db.session.commit()
+        cache.clear()
 
         return trek
 
@@ -119,6 +120,13 @@ class StaffService:
 
         trek.status = TrekStatus.COMPLETED.value
 
+        # Mark all active bookings for this trek as COMPLETED
+        Booking.query.filter_by(
+            trek_id=trek_id,
+            status=BookingStatus.BOOKED.value
+        ).update({"status": BookingStatus.COMPLETED.value})
+
         db.session.commit()
+        cache.clear()
 
         return trek

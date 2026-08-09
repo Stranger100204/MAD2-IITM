@@ -1,4 +1,5 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
+import os
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 from app.services.admin_service import AdminService
@@ -402,16 +403,30 @@ def get_trek_history():
         ]
     }), 200
 
-'''
-@admin_bp.route("/test-report", methods=["POST"])
+@admin_bp.route("/report/generate", methods=["POST"])
 @jwt_required()
 @admin_required
-def test_report():
-
-    task = monthly_report.delay()
-
+def generate_report():
+    """Generate monthly report synchronously and return its path."""
+    from app.services.report_service import ReportService
+    filename = ReportService.generate_monthly_report()
     return jsonify({
-        "message": "Monthly report started.",
-        "task_id": task.id
-    }), 202
-'''
+        "message": "Report generated successfully.",
+        "filename": filename
+    }), 200
+
+@admin_bp.route("/report/download", methods=["GET"])
+@jwt_required()
+@admin_required
+def download_report():
+    """Download the most recently generated monthly report."""
+    filepath = os.path.join("reports", "monthly_report.html")
+    if not os.path.exists(filepath):
+        return jsonify({
+            "error": "No report found. Please generate it first."
+        }), 404
+    return send_file(
+        os.path.abspath(filepath),
+        mimetype="text/html",
+        as_attachment=False
+    )
